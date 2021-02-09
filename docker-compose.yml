@@ -1,0 +1,19 @@
+version: "3.8"
+
+# docker-compose up : pour lancer le docker
+# docker-compose exec db sh : se connecter au docker
+# une fois dans le docker, psql -U root -h localhost app : se connecte en TCP avec user "root" sur database "app"
+services:
+  db:
+    image: "postgres:alpine"
+    environment:
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_USER: "root"
+      POSTGRES_DB: "app"
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
+
+volumes:
+  db-data: {}
