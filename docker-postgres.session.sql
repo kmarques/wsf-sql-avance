@@ -172,14 +172,62 @@ SELECT animal_id,
 FROM animal_status
 GROUP BY animal_id;
 --
+SELECT a.*,
+    ast.status,
+    max_date
+FROM (
+        SELECT animal_id,
+            MAX(date) AS max_date
+        FROM animal_status
+        GROUP BY animal_id
+    ) as ams
+    INNER JOIN animal a ON a.id = ams.animal_id
+    INNER JOIN animal_status ast ON ams.animal_id = ast.animal_id
+    AND ams.max_date = ast.date;
+--
 WITH animal_max_status AS (
     SELECT animal_id,
         MAX(date) AS max_date
     FROM animal_status
     GROUP BY animal_id
 )
-SELECT *
+SELECT a.*,
+    ams.status,
+    max_date
 FROM animal_max_status ams
     INNER JOIN animal a ON a.id = ams.animal_id
     INNER JOIN animal_status ast ON ams.animal_id = ast.animal_id
     AND ams.max_date = ast.date;
+--
+WITH animal_max_status AS (
+    SELECT animal_id,
+        status,
+        date,
+        row_number() OVER (
+            PARTITION BY animal_id
+            ORDER BY date DESC
+        ) AS row_number
+    FROM animal_status
+)
+SELECT a.*,
+    status,
+    date
+FROM animal_max_status ams
+    INNER JOIN animal a ON a.id = ams.animal_id
+WHERE row_number = 1;
+--
+CREATE TABLE event (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    animal_id INT REFERENCES animal(id),
+    date TIMESTAMPTZ NOT NULL
+);
+--
+INSERT INTO event (name, animal_id, date)
+VALUES ('vaccin', 4, NOW() + INTERVAL '1 month'),
+    ('vaccin 2', 4, NOW() + INTERVAL '3 months'),
+    ('vaccin 3', 4, NOW() + INTERVAL '4 months'),
+    ('vermifuge', 4, NOW() + INTERVAL '4 month'),
+    ('vermifuge 2', 4, NOW() + INTERVAL '6 months'),
+    ('vermifuge 3', 4, NOW() + INTERVAL '8 months');
+--
