@@ -231,3 +231,4 @@ VALUES ('vaccin', 4, NOW() + INTERVAL '1 month'),
     ('vermifuge 2', 4, NOW() + INTERVAL '6 months'),
     ('vermifuge 3', 4, NOW() + INTERVAL '8 months');
 --
+-- Récupérer le prochain event pour chaque animaux actuellement malades
