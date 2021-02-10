@@ -140,8 +140,8 @@ SELECT animal.id,
     ua2.lastname
 FROM animal
     INNER JOIN user_account ua ON animal.owner = ua.id
-    INNER JOIN community.follower ON animal.id = animal_id
-    INNER JOIN user_account ua2 ON user_account_id = ua2.id;
+    LEFT JOIN community.follower ON animal.id = animal_id
+    LEFT JOIN user_account ua2 ON user_account_id = ua2.id;
 --
 CREATE TABLE animal_status (
     id SERIAL PRIMARY KEY,
@@ -264,7 +264,7 @@ WITH animal_last_status AS (
 next_event AS (
     SELECT animal_id,
         name,
-        event.DATEdate,
+        event.date,
         row_number() OVER (
             PARTITION BY animal_id
             ORDER BY date ASC
@@ -289,7 +289,42 @@ set category = split_part(name, ' ', 1);
 ALTER TABLE event
 ALTER COLUMN category
 SET NOT NULL;
+--
+INSERT INTO animal(name, owner)
+values('foobar', 2);
 -- Récupérer le prochain event
 --   de chaque categorie d'event
 --   pour chaque animal
 --   qui sont liés (owner ou follower) à john doe
+WITH animal_of_johndoe AS (
+    SELECT animal_id
+    FROM community.follower
+        INNER JOIN user_account ON user_account_id = id
+    WHERE firstname || lastname = 'johndoe'
+    UNION
+    SELECT animal.id as animal_id
+    FROM animal
+        INNER JOIN user_account ON animal.owner = user_account.id
+    WHERE firstname || lastname = 'johndoe'
+),
+event_of_animal_of_johndoe AS (
+    SELECT animal_id,
+        name,
+        event.date,
+        category,
+        row_number() OVER (
+            PARTITION BY animal_id,
+            category
+            ORDER BY date ASC
+        ) AS row_number
+    FROM event
+        RIGHT JOIN animal_of_johndoe USING(animal_id)
+    WHERE event.date > NOW()
+        OR event.date IS NULL
+)
+SELECT animal_id,
+    name,
+    date,
+    category
+FROM event_of_animal_of_johndoe
+WHERE row_number = 1;
