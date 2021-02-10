@@ -17,6 +17,11 @@ database -> schema -> table -> row
 `\dn` Affiche la liste des schémas
 `\dt` Affiche l'ensemble des tables
 
+## Tips SQL
+
+Condition IF `CASE WHEN id = 1 THEN 'foo' WHEN id = 2 THEN 'bar' END`
+Condition SWITCH `CASE id WHEN 1 THEN 'foo' WHEN 2 THEN 'bar' END`
+
 ## Troubleshooting
 
 - On utilise les `"` pour échapper les mots réservés comme `"user"` et on utilise les `'` pour les chaînes de caractères.
