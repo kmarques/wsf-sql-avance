@@ -1,3 +1,4 @@
+BEGIN;
 -- id BIGINT NOT NULL,
 --     firstname VARCHAR(255) NOT NULL,
 --     lastname VARCHAR(255) NOT NULL,
@@ -54,3 +55,75 @@ WHERE user_id = _id;
 DELETE FROM user_account
 WHERE id = _id;
 $$ LANGUAGE SQL;
+--
+CREATE OR REPLACE PROCEDURE createUserPL(
+        _firstname VARCHAR(255),
+        _lastname VARCHAR(255),
+        _address TEXT,
+        _config JSONB
+    ) AS $$
+DECLARE
+    _id BIGINT;
+BEGIN
+SELECT nextval('public.user_account_id_seq') INTO _id;
+INSERT INTO public.user_account(id,firstname, lastname, address, password)
+VALUES (
+        _id,
+        _firstname,
+        _lastname,
+        _address,
+        LEFT(gen_random_uuid()::text, 30)
+    );
+WITH config_exploded AS (
+    SELECT *
+    FROM jsonb_to_record(
+            '{"tos_accepted":false,"newsletter_accepted":false}'::jsonb || _config
+        ) AS x(
+            tos_accepted boolean,
+            newsletter_accepted boolean
+        )
+)
+INSERT INTO public.user_config
+SELECT _id,
+    tos_accepted,
+    newsletter_accepted
+FROM config_exploded;
+END
+$$ LANGUAGE plpgsql;
+--
+CREATE OR REPLACE PROCEDURE checkAnimals(
+        _id in BIGINT,
+        _includeFollower in BOOLEAN,
+        _animals inout jsonb
+    ) AS $$
+DECLARE
+    _nbAnimalsOwner SMALLINT;
+    _nbAnimalsFollower SMALLINT;
+
+BEGIN
+    SELECT COUNT(1) INTO _nbAnimalsOwner FROM animal where owner = _id;
+
+    IF _includeFollower IS true THEN
+        SELECT COUNT(1) INTO _nbAnimalsFollower FROM community.follower WHERE user_account_id = _id;
+    ELSE
+        _nbAnimalsFollower := 0;
+    END IF;
+
+    IF (_nbAnimalsFollower + _nbAnimalsOwner) > 3 THEN
+        RAISE EXCEPTION 'Nb animals exceeded for user #%',_id;
+    END IF;
+
+    WITH animals as (
+        SELECT id, name, 'owned' as type FROM animal WHERE owner = _id
+        UNION
+        SELECT animal.id as id, animal.name as name, 'followed' as type
+        FROM community.follower 
+        JOIN animal ON animal_id = animal.id 
+        WHERE user_account_id = _id AND _includeFollower IS TRUE
+    )
+    SELECT jsonb_agg(jsonb_build_object('id', id, 'name', name, 'type',type))
+    INTO _animals
+    FROM animals;
+END
+$$ LANGUAGE plpgsql;
+COMMIT;
