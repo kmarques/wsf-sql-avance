@@ -17,3 +17,5 @@ CREATE TRIGGER checkAnimals
 AFTER UPDATE OR INSERT ON animal
 FOR EACH ROW
 EXECUTE FUNCTION triggerCheckAnimals();
+--
+COMMIT;

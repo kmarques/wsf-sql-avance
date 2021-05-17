@@ -11,6 +11,7 @@ SELECT CASE
         firstname || lastname
         WHEN 'jeandupont' THEN 'foo'
         WHEN 'johndoe' THEN 'bar'
+        ELSE 'unknown'
     END,
     id
 FROM user_account;
@@ -30,15 +31,15 @@ SELECT id,
     NOW() - INTERVAL '2 years'
 FROM animal
 UNION
-SELECT 4,
+SELECT 3,
     'SICK',
     NOW() - INTERVAL '1 year'
 UNION
-SELECT 5,
+SELECT 4,
     'SICK',
     NOW() - INTERVAL '2 day'
 UNION
-SELECT 5,
+SELECT 4,
     'DEATH',
     NOW() - INTERVAL '1 day';
 --
@@ -67,7 +68,7 @@ WITH animal_max_status AS (
     GROUP BY animal_id
 )
 SELECT a.*,
-    ams.status,
+    ast.status,
     max_date
 FROM animal_max_status ams
     INNER JOIN animal a ON a.id = ams.animal_id

@@ -13,22 +13,21 @@ VALUES ('vaccin', 4, NOW() + INTERVAL '1 month'),
     ('vaccin 3', 4, NOW() + INTERVAL '4 months'),
     ('vermifuge', 4, NOW() + INTERVAL '4 month'),
     ('vermifuge 2', 4, NOW() + INTERVAL '6 months'),
-    ('vermifuge 3', 4, NOW() + INTERVAL '8 months'),
-;
+    ('vermifuge 3', 4, NOW() + INTERVAL '8 months');
 --
 INSERT INTO event (name, animal_id, date)
-VALUES ('vaccin', 5, NOW() + INTERVAL '1 month'),
-    ('vaccin 2', 5, NOW() + INTERVAL '3 months'),
-    ('vaccin 3', 5, NOW() + INTERVAL '4 months'),
-    ('vermifuge', 5, NOW() + INTERVAL '4 month'),
-    ('vermifuge 2', 5, NOW() + INTERVAL '6 months'),
-    ('vermifuge 3', 5, NOW() + INTERVAL '8 months');
+VALUES ('vaccin', 3, NOW() + INTERVAL '1 month'),
+    ('vaccin 2', 3, NOW() + INTERVAL '3 months'),
+    ('vaccin 3', 3, NOW() + INTERVAL '4 months'),
+    ('vermifuge', 3, NOW() + INTERVAL '4 month'),
+    ('vermifuge 2', 3, NOW() + INTERVAL '6 months'),
+    ('vermifuge 3', 3, NOW() + INTERVAL '8 months');
 --
 INSERT INTO event (name, animal_id, date)
 VALUES ('vaccin', 4, NOW() - INTERVAL '1 month'),
     ('vaccin 2', 4, NOW() - INTERVAL '3 months'),
-    ('vaccin 3', 5, NOW() - INTERVAL '4 months'),
-    ('vermifuge', 5, NOW() - INTERVAL '4 month');
+    ('vaccin 3', 3, NOW() - INTERVAL '4 months'),
+    ('vermifuge', 3, NOW() - INTERVAL '4 month');
 --
 ALTER TABLE event
 ADD COLUMN category VARCHAR(9);
@@ -61,14 +60,14 @@ next_event AS (
         event.date,
         row_number() OVER (
             PARTITION BY animal_id
-            ORDER BY date ASC
+            ORDER BY event.date ASC
         ) AS row_number
     FROM event
         INNER JOIN animal_last_status USING (animal_id)
-    WHERE date > NOW()
+    WHERE event.date > NOW()
         AND animal_last_status.row_number = 1
         AND animal_last_status.status = 'SICK'
-        AND animal_last_status < NOW()
+        AND animal_last_status.date < NOW()
 )
 select *
 from next_event
@@ -96,7 +95,7 @@ event_of_animal_of_johndoe AS (
         row_number() OVER (
             PARTITION BY animal_id,
             category
-            ORDER BY date ASC
+            ORDER BY event.date ASC
         ) AS row_number
     FROM event
         RIGHT JOIN animal_of_johndoe USING(animal_id)
